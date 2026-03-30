@@ -33,7 +33,7 @@ A Vue 3 application that implements a 4-dimensional Bitcoin signal system with a
 - ✅ Manual refresh button
 - ✅ Responsive design
 - ✅ Visual signal cards with color coding
-- ✅ Data from CoinGecko & Binance APIs
+- ✅ Data from bitcoin-data.com, CoinGecko & Binance APIs
 
 ## Installation
 
@@ -104,10 +104,13 @@ Overall Score =
 ## Data Sources
 
 - **BTC Price & Trend**: CoinGecko API (real-time prices + 60-day history)
-- **ETF Flows**: CoinGecko Volume Data (volume changes as flow proxy)
-  - Note: Real ETF flow data requires premium APIs (CoinGlass, Bloomberg, etc.)
-  - Volume increases indicate positive flow, decreases indicate negative flow
-- **Derivatives**: Binance Futures API (real-time funding rate + open interest)
+- **ETF Flows**: bitcoin-data.com API (real Bitcoin ETF flow data in BTC)
+  - Endpoint: `https://bitcoin-data.com/api/v1/etf-flow-btc`
+  - Daily aggregated Bitcoin ETF holdings and flows
+- **Derivatives**:
+  - Funding Rate: Binance Futures API (real-time funding rate)
+  - Open Interest: bitcoin-data.com API (hourly aggregated open interest across exchanges)
+  - Endpoint: `https://bitcoin-data.com/api/v1/open-interest-1h`
 - **NASDAQ**: Yahoo Finance API via CORS proxy (real-time NASDAQ Composite)
 
 ## Auto-Refresh
@@ -135,10 +138,14 @@ refreshInterval = setInterval(() => {
 }, 24 * 60 * 60 * 1000); // Change 24 to desired hours
 ```
 
-## API Rate Limits
+## API Rate Limits & CORS
 
-- CoinGecko: 10-50 calls/minute (free tier)
-- Binance: No authentication required for market data
+- **bitcoin-data.com**: Public API, reasonable use policy (accessed via CORS proxy)
+- **CoinGecko**: 10-50 calls/minute (free tier, direct access)
+- **Binance**: No authentication required for market data (direct access)
+- **Yahoo Finance**: Accessed via CORS proxy
+
+Note: Some APIs require CORS proxy (`corsproxy.io`) for browser-based access.
 
 ## License
 
