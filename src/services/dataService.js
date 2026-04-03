@@ -9,8 +9,20 @@ export class DataService {
   constructor() {
     this.btcPrices = [];
     this.lastUpdate = null;
-    // CORS proxy for APIs that don't allow direct browser access
-    this.corsProxy = "https://corsproxy.io/?";
+    this.corsProxies = [
+      "https://api.allorigins.win/raw?url=",
+      "https://corsproxy.io/?",
+    ];
+    this.currentProxyIndex = 0;
+  }
+
+  getProxyUrl(url) {
+    const proxy = this.corsProxies[this.currentProxyIndex];
+    return proxy + encodeURIComponent(url);
+  }
+
+  rotateProxy() {
+    this.currentProxyIndex = (this.currentProxyIndex + 1) % this.corsProxies.length;
   }
 
   /**
@@ -96,15 +108,28 @@ export class DataService {
     }
   }
 
+  async fetchWithProxy(url, maxRetries = 2) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const proxyUrl = this.getProxyUrl(url);
+        const response = await axios.get(proxyUrl);
+        return response;
+      } catch (error) {
+        console.warn(`Proxy attempt ${attempt + 1} failed, rotating...`, error.message);
+        this.rotateProxy();
+      }
+    }
+    throw new Error("All CORS proxies failed");
+  }
+
   /**
    * Fetch ETF flow data from bitcoin-data.com
    * Real Bitcoin ETF flow data in BTC
    */
   async fetchETFFlows() {
     try {
-      // Fetch actual ETF flow data from bitcoin-data.com with CORS proxy
-      const url = `${this.corsProxy}https://bitcoin-data.com/api/v1/etf-flow-btc?last=30`;
-      const response = await axios.get(url);
+      const url = "https://bitcoin-data.com/api/v1/etf-flow-btc?last=30";
+      const response = await this.fetchWithProxy(url);
 
       if (!response.data || !Array.isArray(response.data)) {
         throw new Error("Invalid ETF flow data format");
@@ -151,8 +176,8 @@ export class DataService {
       let openInterest = 0;
       let oiChange = 0;
       try {
-        const oiUrl = `${this.corsProxy}https://bitcoin-data.com/api/v1/open-interest-1h?last=48`;
-        const oiResponse = await axios.get(oiUrl);
+        const oiUrl = "https://bitcoin-data.com/api/v1/open-interest-1h?last=48";
+        const oiResponse = await this.fetchWithProxy(oiUrl);
 
         if (oiResponse.data && Array.isArray(oiResponse.data) && oiResponse.data.length > 1) {
           const currentOI = parseFloat(oiResponse.data[oiResponse.data.length - 1].sumOpenInterest);
@@ -187,8 +212,8 @@ export class DataService {
    */
   async fetchNASDAQData() {
     try {
-      const url = `${this.corsProxy}https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1d&range=2d`;
-      const response = await axios.get(url);
+      const url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1d&range=2d";
+      const response = await this.fetchWithProxy(url);
 
       console.log("NASDAQ API Response:", response.data);
 
