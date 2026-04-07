@@ -10,7 +10,6 @@ export class DataService {
     this.btcPrices = [];
     this.lastUpdate = null;
     this.corsProxies = [
-      "https://api.allorigins.win/raw?url=",
       "https://corsproxy.io/?",
     ];
     this.currentProxyIndex = 0;
@@ -30,16 +29,8 @@ export class DataService {
    */
   async fetchBTCPrices(days = 60) {
     try {
-      const response = await axios.get(
-        `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart`,
-        {
-          params: {
-            vs_currency: "usd",
-            days: days,
-            interval: "daily",
-          },
-        }
-      );
+      const url = `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+      const response = await this.fetchWithProxy(url);
 
       if (!response.data || !response.data.prices) {
         throw new Error("Invalid BTC price data received");
@@ -60,16 +51,8 @@ export class DataService {
    */
   async fetchCurrentBTCPrice() {
     try {
-      const response = await axios.get(
-        "https://api.coingecko.com/api/v3/simple/price",
-        {
-          params: {
-            ids: "bitcoin",
-            vs_currencies: "usd",
-            include_24hr_change: "true",
-          },
-        }
-      );
+      const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
+      const response = await this.fetchWithProxy(url);
 
       if (!response.data || !response.data.bitcoin) {
         throw new Error("Invalid BTC price data received");
@@ -158,13 +141,9 @@ export class DataService {
    */
   async fetchDerivativesData() {
     try {
-      // Fetch funding rate from Binance (no CORS issues)
-      const fundingResponse = await axios.get(
-        "https://fapi.binance.com/fapi/v1/premiumIndex",
-        {
-          params: { symbol: "BTCUSDT" },
-        }
-      );
+      // Fetch funding rate from Binance with CORS proxy
+      const fundingUrl = "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT";
+      const fundingResponse = await this.fetchWithProxy(fundingUrl);
 
       if (!fundingResponse.data) {
         throw new Error("Invalid funding rate data received");
